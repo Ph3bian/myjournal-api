@@ -1,18 +1,16 @@
 "use strict";
 const Post = use("App/Models/Post");
-const Handler = use('App/Exceptions/Handler')
-var Logger = use("Logger");
+const Database = use("Database");
+const Handler = use("App/Exceptions/Handler");
+
 class PostController extends Handler {
   async getPosts({ auth, response }) {
     try {
       const validUser = await auth.getUser();
-      Logger.info("helllooo tello");
-      Logger.info(JSON.stringify(validUser));
-      const post = await Post.all();
-
+      const post = await Database.table("posts").where("user_id", validUser.id);
       if (!validUser) {
         return response.unauthorized({
-          message: "Missing or invalid jwt token",
+          message: "Missing or invalid  token",
           success: false,
         });
       }
@@ -22,23 +20,22 @@ class PostController extends Handler {
         message: "Posts retrieved successfully",
       };
     } catch (error) {
-      response.send({
-        message: "Missing or invalid jwt token",
+      response.badRequest({
+        message: "Error retrieving posts",
         success: false,
+        error: error.message,
       });
     }
   }
   async createPost({ auth, request, response }) {
     try {
-     const isValid= await auth.check()
       const validUser = await auth.getUser();
-      Logger.info(isValid);
-      if (!isValid) {
-       response.unauthorized({
+      if (!validUser) {
+        response.unauthorized({
           message: "Missing or invalid jwt token",
           success: false,
         });
-        return
+        return;
       }
       const data = request.all();
       data.user_id = validUser.id;
@@ -71,7 +68,7 @@ class PostController extends Handler {
       });
     }
   }
-  async editPost({ auth, request, response }) {
+  async editPost({ request, response }) {
     try {
       const { id, title, description } = request.all();
       const post = await Post.find(id);
@@ -93,7 +90,7 @@ class PostController extends Handler {
       });
     }
   }
-  async deletePost({ auth, response, request }) {
+  async deletePost({ response, request }) {
     try {
       const { id } = request.all();
       const post = await Post.find(id);

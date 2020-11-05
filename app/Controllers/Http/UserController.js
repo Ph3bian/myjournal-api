@@ -1,6 +1,5 @@
 "use strict";
 const User = use("App/Models/User");
-const Logger = use("Logger");
 class UserController {
   async login({ auth, request, response }) {
     try {
