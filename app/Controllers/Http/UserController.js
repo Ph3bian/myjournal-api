@@ -1,32 +1,54 @@
-'use strict'
-const Redis = use('Redis')
-const Format = use('date-fns/format')
-
+"use strict";
+const User = use("App/Models/User");
+const Logger = use("Logger");
 class UserController {
-    async login({ auth, request }) {
-        const { email, password } = request.all()
-        let user = await auth.validate(email, password, true)
+  async login({ auth, request, response }) {
+    try {
+      const { email, password } = request.all();
+      const userData = await User.findBy("email", email);
+      if (!userData) throw new Error("Invalid Credentials");
+      let user = await auth.attempt(email, password);
 
-        const jwt = await auth.generate(user)
-
-        return {
-            success: true,
-            ...jwt,
-            message: 'Logged in successfully'
-        }
+      return response.send({
+        success: true,
+        token: user.token,
+        user: userData,
+        message: "Logged in successfully",
+      });
+    } catch (error) {
+      return response.badRequest({
+        success: false,
+        error,
+      });
     }
-
-    async register({ auth, request }) {
-        const user = request.all()
-      
-        const jwt = await auth.generate(user)
-
-        return {
-            success: true,
-            ...jwt,
-            message: 'Account Created'
-        }
+  }
+  async register({ auth, request, response }) {
+    const userData = request.all();
+    if (!userData) {
+      return response.badRequest({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
+    try {
+      const user = await User.findOrCreate(userData);
+
+      const jwt = await auth.generate(user);
+
+      return response.send({
+        success: true,
+        ...jwt,
+        user,
+        message: "Account Created",
+      });
+    } catch (error) {
+      return response.badRequest({
+        success: false,
+        message: `Error creating user account`,
+        error,
+      });
+    }
+  }
 }
 
-module.exports = UserController
+module.exports = UserController;

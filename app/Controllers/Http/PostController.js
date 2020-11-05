@@ -1,22 +1,23 @@
 "use strict";
+const Post = use("App/Models/Post");
 
 class PostController {
   async getPosts({ auth, request }) {
-    const data = request.all();
+    const post = await Post.all();
 
     return {
       success: true,
-      ...jwt,
+      post,
       message: "Logged in successfully",
     };
   }
   async getPost({ auth, request }) {
-    const data = request.all();
-    let user = await auth.validate(email, password, true);
+    const { id } = request.all();
+    const post = await Post.findBy("id", id);
 
     return {
       success: true,
-
+      post,
       message: "Logged in successfully",
     };
   }
