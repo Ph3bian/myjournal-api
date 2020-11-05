@@ -6,7 +6,12 @@ class UserController {
     try {
       const { email, password } = request.all();
       const userData = await User.findBy("email", email);
-      if (!userData) throw new Error("Invalid Credentials");
+      if (!userData) {
+        return response.badRequest({
+          success: false,
+          message: "Invalid credentials",
+        });
+      }
       let user = await auth.attempt(email, password);
 
       return response.send({
@@ -42,10 +47,13 @@ class UserController {
         message: "Account Created",
       });
     } catch (error) {
+      let message;
+      if (error.code == "23505") {
+        message = "User account already exists";
+      }
       return response.badRequest({
         success: false,
-        message: `Error creating user account`,
-        error,
+        message: message ? message : `Error creating user account`,
       });
     }
   }

@@ -1,12 +1,15 @@
 "use strict";
 const Post = use("App/Models/Post");
-const Logger = user("Logger");
-class PostController {
+const Handler = use('App/Exceptions/Handler')
+var Logger = use("Logger");
+class PostController extends Handler {
   async getPosts({ auth, response }) {
     try {
-      const validUser = await auth.check();
+      const validUser = await auth.getUser();
+      Logger.info("helllooo tello");
+      Logger.info(JSON.stringify(validUser));
       const post = await Post.all();
-      Logger.info("here oo", validUser);
+
       if (!validUser) {
         return response.unauthorized({
           message: "Missing or invalid jwt token",
@@ -27,20 +30,23 @@ class PostController {
   }
   async createPost({ auth, request, response }) {
     try {
-      const validUser = await auth.check();
-      if (!validUser) {
-        console.log("here oo");
-        return response.badRequest({
+     const isValid= await auth.check()
+      const validUser = await auth.getUser();
+      Logger.info(isValid);
+      if (!isValid) {
+       response.unauthorized({
           message: "Missing or invalid jwt token",
           success: false,
         });
+        return
       }
       const data = request.all();
+      data.user_id = validUser.id;
 
       await Post.create(data);
       return response.send({
         success: true,
-        message: "Posts retrieved successfully",
+        message: "Posts created successfully",
       });
     } catch (error) {
       response.badRequest({
@@ -49,46 +55,58 @@ class PostController {
       });
     }
   }
-  async getPost({ auth, request, response }) {
-    const { id } = request.all();
+  async getPost({ request, response }) {
     try {
+      const { id } = request.all();
       const post = await Post.findBy("id", id);
-
       return response.send({
         success: true,
         post,
-        message: "Logged in successfully",
+        message: "Post retrieved successfully",
       });
     } catch (error) {
       return response.badRequest({
         success: false,
-        error,
+        message: "Post not found",
       });
     }
   }
   async editPost({ auth, request, response }) {
-    const data = request.all();
     try {
+      const { id, title, description } = request.all();
+      const post = await Post.find(id);
+      if (title) {
+        post.title = title;
+      }
+      if (description) {
+        post.description = description;
+      }
+      await post.save();
       return response.send({
         success: true,
-        data,
         message: "Edit Post successful",
       });
     } catch (error) {
       return response.badRequest({
         success: false,
-        error,
+        message: "Edit Post failed",
       });
     }
   }
-  async deletePost({ auth, request, response }) {
-    const { email, password } = request.all();
-
-    const data = request.all();
-
-    return response.status(204).send({
-      success: true,
-    });
+  async deletePost({ auth, response, request }) {
+    try {
+      const { id } = request.all();
+      const post = await Post.find(id);
+      await post.delete();
+      return response.status(204).send({
+        success: true,
+      });
+    } catch (error) {
+      return response.badRequest({
+        success: false,
+        message: "Delete failed",
+      });
+    }
   }
 }
 
