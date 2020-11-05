@@ -12,9 +12,9 @@ Route.post('auth/login', 'UserController.login').middleware('guest')
 
 Route.put('auth/register', 'UserController.register').middleware('guest')
 
-Route.get('posts', 'UserController.getPosts').middleware('auth')
+Route.get('posts', 'PostController.getPosts').middleware('auth')
 
-Route.get('posts/:id', 'UserController.getPost').middleware('auth')
+Route.get('posts/:id', 'PostController.getPost').middleware('auth')
 
 Route.post('posts', 'PostController.createPost').middleware('auth')
 
