@@ -7,7 +7,7 @@ class PostController extends Handler {
   async getPosts({ auth, response }) {
     try {
       const validUser = await auth.getUser();
-      const post = await Database.table("posts").where("user_id", validUser.id);
+      const post = await Database.table("posts").where("user_id", validUser.id).orderBy('updated_at', 'desc');
       if (!validUser) {
         return response.unauthorized({
           message: "Missing or invalid  token",
